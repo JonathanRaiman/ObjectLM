@@ -1,4 +1,4 @@
-package yelplm;
+package objectlm;
 
 import org.ejml.simple.SimpleMatrix;
 
@@ -35,10 +35,36 @@ public class VectorUtils {
 		return output.scale(1.0 / sum);
 	}
 	
+	/*
+	 * Retrieve the index of the largest value in a matrix.
+	 */
+	public static Integer argmax(SimpleMatrix input) {
+		int greatest = -1;
+		double max_observed = Double.NEGATIVE_INFINITY;
+		if (input.numRows() > input.numCols()) {
+			input = input.transpose();
+		}
+		for (int i = 0; i < input.numCols(); ++i) {
+			if (input.get(0,i) > max_observed) {
+				max_observed = input.get(0, i);
+				greatest = i;
+			}
+		}
+		return greatest;
+	}
+	
+	/* Sigmoid with Float inputs.
+	 * Applies the nonlinearity:
+	 *     f(x) = 1 / 1 + exp(-x)
+	 */
 	public static double sigmoid(Float input) {
 		return (1.0 / (1.0 + Math.exp(-input)));
 	}
 	
+	/* Sigmoid with Double inputs.
+	 * Applies the nonlinearity:
+	 *     f(x) = 1 / 1 + exp(-x)
+	 */
 	public static double sigmoid(double input) {
 		return 1.0 / (1.0 + Math.exp(-input));
 	}
