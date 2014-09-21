@@ -14,6 +14,4 @@ To load a saved copy of the model from Python you can use the following function
 	String base_path = "saves/current_model";
 	ObjectLM model = load_saved_python_model(base_path);
 
-And the model will then be parametrized as the Python one. In this directory a `__dict__.txt` file
-includes the parameters, a `__vocab__.gz` file holds the vocabulary mapping, and a `parameters.mat`
-Matlab matrix file holds the saved parameters.
+And the model will then be parametrized as the Python one. In this directory a `__dict__.txt` file includes the parameters, a `__vocab__.gz` file holds the vocabulary mapping, and a `parameters.mat` Matlab matrix file holds the saved parameters, and `__objects__.gz` holds the mapping between some unique string id for objects and their vector.

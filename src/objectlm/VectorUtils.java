@@ -1,5 +1,10 @@
 package objectlm;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+
 import org.ejml.simple.SimpleMatrix;
 
 public class VectorUtils {
@@ -52,6 +57,34 @@ public class VectorUtils {
 		}
 		return greatest;
 	}
+	
+	public static Integer[] argsort(final float[] a, final boolean ascending) {
+		Integer[] indexes = new Integer[a.length];
+        for (int i = 0; i < indexes.length; i++) {
+            indexes[i] = i;
+        }
+        Arrays.sort(indexes, new Comparator<Integer>() {
+            @Override
+            public int compare(final Integer i1, final Integer i2) {
+                return (ascending ? 1 : -1) * Float.compare(a[i1], a[i2]);
+            }
+        });
+        return indexes;
+    }
+	
+	public static ArrayList<Integer> argsort(final SimpleMatrix a, final boolean ascending) {
+		ArrayList<Integer> indexes = new ArrayList<Integer>();
+        for (int i = 0; i < a.numRows(); i++) {
+            indexes.add(i);
+        }
+        Collections.sort(indexes, new Comparator<Integer>() {
+            @Override
+            public int compare(final Integer i1, final Integer i2) {
+                return (ascending ? 1 : -1) * Double.compare(a.get(i1,0), a.get(i2,0));
+            }
+        });
+        return indexes;
+    }
 	
 	/* Sigmoid with Float inputs.
 	 * Applies the nonlinearity:

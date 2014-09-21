@@ -7,6 +7,8 @@ import java.util.Arrays;
 import java.util.Map;
 
 import numpy_to_ejml.MatrixImporter;
+import objectlm.utils.Triple;
+import objectlm.utils.Tuple;
 
 import org.ejml.simple.SimpleBase;
 import org.ejml.simple.SimpleMatrix;
@@ -275,6 +277,7 @@ public class ObjectLM implements Serializable {
 		SavedParameterReader.check_file_existence(pathname, "parameters.mat");
 		SavedParameterReader.check_file_existence(pathname, "__dict__.txt");
 		SavedParameterReader.check_file_existence(pathname, "__vocab__.gz");
+		SavedParameterReader.check_file_existence(pathname, "__objects__.gz");
 		
 		// load the parameter matrices:
 		Map<String, SimpleMatrix> m       = MatrixImporter.load_matrix(pathname + "parameters.mat");
@@ -282,6 +285,7 @@ public class ObjectLM implements Serializable {
 		Map<String, String> params        = SavedParameterReader.convert_file_to_map(pathname + "__dict__.txt");
 		// load the vocabulary mapping:
 		SavedVocabulary vocab             = SavedParameterReader.load_vocabulary(pathname + "__vocab__.gz");
+		SavedVocabulary objects           = SavedParameterReader.load_vocabulary(pathname + "__objects__.gz");
 		
 		ArrayList<Integer> output_classes = SavedParameterReader.convert_string_to_output_classes(params.get("output_classes"));
 		
@@ -294,8 +298,8 @@ public class ObjectLM implements Serializable {
 				vocab.word2index,
 				Integer.parseInt(params.get("UnknownWordIndex")),
 				Integer.parseInt(params.get("UnknownUppercaseWordIndex")),
-				null,
-				null,
+				objects.index2word,
+				objects.word2index,
 				Integer.parseInt(params.get("window")),
 				Integer.parseInt(params.get("size")),
 				Integer.parseInt(params.get("object_size")),
@@ -328,14 +332,46 @@ public class ObjectLM implements Serializable {
 		return indices;
 	}
 	
-	public static void main( String[] args) throws Exception {	
+	public ArrayList<Triple<Double, String, Integer>> most_similar_using_matrix(SimpleMatrix prism, int index, List<String> index2word, Integer topn) {
+		if (topn == null) {
+			topn = 10;
+		}
+		SimpleMatrix dists = prism.mult( prism.extractVector(true, index).transpose() );
+		List<Integer> best = VectorUtils.argsort(dists, false);
+		best = best.subList(0, topn + 1);
+		
+		ArrayList<Triple<Double, String, Integer>> sims = new ArrayList<Triple<Double, String, Integer>>();
+		
+		for (Integer i : best) {
+			if (i != index) {
+				sims.add(new Triple<Double, String, Integer>(
+						dists.get(i, 0),
+						index2word.get(i),
+						i
+						));
+			}
+		}
+		return sims;
+	}
+	
+	public ArrayList<Triple<Double, String, Integer>> most_similar_word(String word, Integer topn) {
+		return most_similar_using_matrix(model_matrix, get_index(word), index2word, topn);
+	}
+	
+	public ArrayList<Triple<Double, String, Integer>> most_similar_object(String object_id, Integer topn) {
+		return most_similar_using_matrix(object_matrix, object2index.get(object_id), index2object, topn);
+	}
+	
+	public static void main( String[] args) throws Exception {
 		String base_path = "/Users/jonathanraiman/Documents/Master/research/deep_learning/restaurant_rsm/saves/yelplm_window_10_lm_20_objlm_20_4/";
 		ObjectLM model = load_saved_python_model(base_path);
 		
-		// Some sentences that can be read:
 		
-		String sentence = "On January 24th , Apple Computer will introduce Macintosh . And you 'll see why 1984 won't be like `` 1984 '' .";
-		//String sentence = "Great wine expensive food and tasty soup with rolls and parsley .";
+		String search_word = "he";
+		String search_id = "The Lemongrass";
+		// Some sentences that can be read:
+		//String sentence = "On January 24th , Apple Computer will introduce Macintosh . And you 'll see why 1984 won't be like `` 1984 '' .";
+		String sentence = "Great wine expensive food and tasty soup with rolls and parsley .";
 		
 		// the index of the document:
 		int object_index = 0;
@@ -353,18 +389,41 @@ public class ObjectLM implements Serializable {
 		System.out.println();
 		
 		System.out.println("Predicted Price & Rating:");
-		System.out.println("===========");
+		System.out.println("=========================");
 		for (int i = 0; i < num_output_classes; ++i ) {
 			System.out.println(model.output_labels.get(i).get(labels.get(i)));
 		}
 		System.out.println();
 		System.out.println("Predicted Categories:");
-		System.out.println("===========");
+		System.out.println("=====================");
 		
 		for (int i = 0; i < model.output_sigmoid_classes; ++i) {
 			if (labels.get(num_output_classes + i) == 1) {
 				System.out.println(model.output_sigmoid_labels.get(i));
 			}
+		}
+		
+		System.out.println("Search");
+		System.out.println("======");
+		System.out.println("\n\n");
+		
+		
+		// Search for words:
+		System.out.println("Neighbors for Word:");
+		System.out.println("==========");
+		System.out.println('"' + search_word + '"');
+		for (Triple triple : model.most_similar_word(search_word, 10)) {
+			System.out.println(triple.y + " : " + triple.x);
+		}
+		
+		System.out.println("\n\n");
+		
+		// Search for Objects:
+		System.out.println("Neighbors for Object:");
+		System.out.println("==========");
+		System.out.println('"' + search_id + '"');
+		for (Triple triple : model.most_similar_object(search_id, 10)) {
+			System.out.println(triple.y + " : " + triple.x);
 		}
 		
 	}

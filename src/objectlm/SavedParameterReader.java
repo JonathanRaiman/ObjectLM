@@ -139,7 +139,7 @@ public class SavedParameterReader {
 		SavedVocabulary vocab = load_vocabulary(vocab_path);
 		
 		System.out.println("first word in vocab is : " + vocab.index2word.get(0));
-		System.out.println("size of vocab is : " + vocab.index2word.size());
+		System.out.println("      size of vocab is : " + vocab.index2word.size());
 		
 	}
 
