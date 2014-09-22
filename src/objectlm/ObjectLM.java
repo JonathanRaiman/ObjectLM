@@ -1,6 +1,5 @@
 package objectlm;
 import java.io.File;
-import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -8,9 +7,8 @@ import java.util.Map;
 
 import numpy_to_ejml.MatrixImporter;
 import objectlm.utils.Triple;
-import objectlm.utils.Tuple;
+//import objectlm.utils.Tuple;
 
-import org.ejml.simple.SimpleBase;
 import org.ejml.simple.SimpleMatrix;
 
 import java.util.List;
@@ -26,6 +24,9 @@ public class ObjectLM implements Serializable {
 	public SimpleMatrix bias_vector;
 	public SimpleMatrix model_matrix;
 	public SimpleMatrix object_matrix;
+	
+	public SimpleMatrix norm_model_matrix;
+	public SimpleMatrix norm_object_matrix;
 	
 	// convert words and objects to indices with look-ups
 	public ArrayList<String> index2word;
@@ -76,7 +77,7 @@ public class ObjectLM implements Serializable {
 			ArrayList<Integer> output_classes,
 			ArrayList<ArrayList<String>> output_labels,
 			int output_sigmoid_classes,
-			ArrayList<String> output_sigmoid_labels) {
+			ArrayList<String> output_sigmoid_labels) throws Exception {
 		this.projection_matrix = projection_matrix;
 		this.bias_vector   = bias_vector;
 		
@@ -111,6 +112,8 @@ public class ObjectLM implements Serializable {
 		for (int i : output_classes) {
 			this.prediction_size += i;
 		}
+		
+		create_normalized_matrices();
 	}
 	
 	/*
@@ -121,6 +124,28 @@ public class ObjectLM implements Serializable {
 		if (this.bias_vector.numRows() < this.bias_vector.numCols()) {
 			this.bias_vector = this.bias_vector.transpose();
 		}
+	}
+	
+	public void create_normalized_matrices() throws Exception {
+		// sum the squares of each vector, square root each to get norm,
+		// and divide each column by the norm as done in the Python
+		// implementation.
+		this.norm_model_matrix = VectorUtils.element_divide(
+				model_matrix,
+				VectorUtils.sqrt(
+						VectorUtils.sum(
+								model_matrix.elementMult(model_matrix),
+								-1),
+								true),
+						false);
+		this.norm_object_matrix = VectorUtils.element_divide(
+				object_matrix,
+				VectorUtils.sqrt(
+						VectorUtils.sum(
+								object_matrix.elementMult(object_matrix),
+								-1),
+								true),
+						false);
 	}
 	
 	
@@ -355,15 +380,17 @@ public class ObjectLM implements Serializable {
 	}
 	
 	public ArrayList<Triple<Double, String, Integer>> most_similar_word(String word, Integer topn) {
-		return most_similar_using_matrix(model_matrix, get_index(word), index2word, topn);
+		return most_similar_using_matrix(norm_model_matrix, get_index(word), index2word, topn);
 	}
 	
 	public ArrayList<Triple<Double, String, Integer>> most_similar_object(String object_id, Integer topn) {
-		return most_similar_using_matrix(object_matrix, object2index.get(object_id), index2object, topn);
+		return most_similar_using_matrix(norm_object_matrix, object2index.get(object_id), index2object, topn);
 	}
 	
 	public static void main( String[] args) throws Exception {
-		String base_path = "/Users/jonathanraiman/Documents/Master/research/deep_learning/restaurant_rsm/saves/yelplm_window_10_lm_20_objlm_20_4/";
+		// Load the 4th epoch of the model with window size 10
+		// language model size 20, and object language model size 20:
+		String base_path = "/Users/jonathanraiman/Documents/Master/research/deep_learning/restaurant_rsm/saves/objectlm_window_10_lm_20_objlm_20_4/";
 		ObjectLM model = load_saved_python_model(base_path);
 		
 		
@@ -385,7 +412,8 @@ public class ObjectLM implements Serializable {
 		// Restitute:
 		int num_output_classes = model.output_classes.size();
 		System.out.println("Predictions for:");
-		System.out.println('"' + sentence + '"');
+		System.out.println(" Word window: \"" + sentence + '"');
+		System.out.println("Restaurant id: \"" + model.index2object.get(object_index) + '"');
 		System.out.println();
 		
 		System.out.println("Predicted Price & Rating:");
@@ -412,8 +440,8 @@ public class ObjectLM implements Serializable {
 		System.out.println("Neighbors for Word:");
 		System.out.println("==========");
 		System.out.println('"' + search_word + '"');
-		for (Triple triple : model.most_similar_word(search_word, 10)) {
-			System.out.println(triple.y + " : " + triple.x);
+		for (Triple<Double, String, Integer> result : model.most_similar_word(search_word, 10)) {
+			System.out.println(result.y + " : " + result.x);
 		}
 		
 		System.out.println("\n\n");
@@ -422,8 +450,8 @@ public class ObjectLM implements Serializable {
 		System.out.println("Neighbors for Object:");
 		System.out.println("==========");
 		System.out.println('"' + search_id + '"');
-		for (Triple triple : model.most_similar_object(search_id, 10)) {
-			System.out.println(triple.y + " : " + triple.x);
+		for (Triple<Double, String, Integer> result : model.most_similar_object(search_id, 10)) {
+			System.out.println(result.y + " : " + result.x);
 		}
 		
 	}

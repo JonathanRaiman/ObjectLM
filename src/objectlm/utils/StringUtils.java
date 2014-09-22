@@ -1,6 +1,7 @@
 package objectlm.utils;
 
 public class StringUtils {
+	
 	public static int LevenshteinDistance (String s0, String s1) {
 		// source: http://en.wikibooks.org/wiki/Algorithm_Implementation/Strings/Levenshtein_distance#Java
 	    int len0 = s0.length() + 1;                                                     
