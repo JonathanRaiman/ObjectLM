@@ -189,16 +189,15 @@ public class VectorUtils {
 	}
 	
 	public static void main (String[] args) throws Exception {
-		double[][] mat1_doubles = {{0.1, 0.2, 0.3}, {1.0, 2.0, 3.0}};
-		SimpleMatrix mat1 = new SimpleMatrix(mat1_doubles);
+		
+		SimpleMatrix mat1 = new SimpleMatrix(new double[][]{{0.1, 0.2, 0.3}, {1.0, 2.0, 3.0}});
 		System.out.println(sum(mat1, null));
 		System.out.println(sum(mat1, 0));
 		System.out.println(sum(mat1, 1));
 		System.out.println(sum(mat1, -1));
 		System.out.println(sum(mat1, -2));
 		
-		double[][] mat_divisor_doubles = {{1.0, 2.0, 3.0}};
-		SimpleMatrix mat_divisor = new SimpleMatrix(mat_divisor_doubles);
+		SimpleMatrix mat_divisor = new SimpleMatrix(new double[][]{{1.0, 2.0, 3.0}});
 		
 		System.out.println(element_divide(mat1, mat_divisor));
 		
