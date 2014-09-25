@@ -25,11 +25,11 @@ public class StringSearch {
 	
 	// how far should 2 strings be matched:
 	static final int MAXDISTANCE = 4;
-	static final String DB_NAME = "yelp";
-	static final String COLLECTION_NAME = "restaurants";
+	public static final String DB_NAME = "yelp";
+	public static final String COLLECTION_NAME = "restaurants";
 	
-	static final int JARO_WINKLER = 0;
-	static final int LEVENSHTEIN = 1;
+	public static final int JARO_WINKLER = 0;
+	public static final int LEVENSHTEIN = 1;
 	
 	public static int search_score_levenshtein(String query, List<String> keys) {
 		int best_score = Integer.MAX_VALUE, new_score;
@@ -94,7 +94,7 @@ public class StringSearch {
 		
 		System.out.println(name);
 		System.out.println(price);
-		System.out.println(StringUtils.repeat('★', rating.intValue()));
+		System.out.println(StringUtils.repeat('*', rating.intValue()));
 		String category_string = "Categories: " + StringUtils.join(categories, ", ");
 		System.out.println(category_string);
 		System.out.println(StringUtils.repeat('-', category_string.length()));

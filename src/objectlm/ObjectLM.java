@@ -379,12 +379,38 @@ public class ObjectLM implements Serializable {
 		return sims;
 	}
 	
+	public ArrayList<Triple<Double, String, Integer>> most_similar_using_matrix_vector(SimpleMatrix prism, SimpleMatrix x, List<String> index2word, Integer topn) {
+		if (topn == null) {
+			topn = 10;
+		}
+		SimpleMatrix dists = prism.mult( x );
+		List<Integer> best = VectorUtils.argsort(dists, false);
+		best = best.subList(0, topn);
+		
+		ArrayList<Triple<Double, String, Integer>> sims = new ArrayList<Triple<Double, String, Integer>>();
+		
+		for (Integer i : best) {
+			sims.add(new Triple<Double, String, Integer>(
+						dists.get(i, 0),
+						index2word.get(i),
+						i
+						));
+		}
+		return sims;
+	}
+	
+	
+	
 	public ArrayList<Triple<Double, String, Integer>> most_similar_word(String word, Integer topn) {
 		return most_similar_using_matrix(norm_model_matrix, get_index(word), index2word, topn);
 	}
 	
 	public ArrayList<Triple<Double, String, Integer>> most_similar_object(String object_id, Integer topn) {
 		return most_similar_using_matrix(norm_object_matrix, object2index.get(object_id), index2object, topn);
+	}
+	
+	public ArrayList<Triple<Double, String, Integer>> most_similar_object(SimpleMatrix x, Integer topn) {
+		return most_similar_using_matrix_vector(norm_object_matrix, x, index2object, topn);
 	}
 	
 	public static void main( String[] args) throws Exception {
