@@ -9,6 +9,8 @@ import numpy_to_ejml.MatrixImporter;
 import objectlm.utils.Triple;
 //import objectlm.utils.Tuple;
 
+import objectlm.utils.Tuple;
+
 import org.ejml.simple.SimpleMatrix;
 
 import java.util.List;
@@ -278,6 +280,41 @@ public class ObjectLM implements Serializable {
 		return self;
 	}
 	
+	public SimpleMatrix output_label_representation(int[] output_index) {
+		SimpleMatrix vec = new SimpleMatrix(prediction_size, 1);
+		for (int c : output_index) {
+			vec.set(c, 0, 1.0);
+		}
+		SimpleMatrix search_vec = projection_matrix.transpose().mult(vec);
+		return VectorUtils.normalize(search_vec.extractMatrix(window * size, window * size + object_size, 0, 1));
+	}
+	
+	public SimpleMatrix output_label_representation(List<Tuple<Integer, Double>> output_indices) {
+		SimpleMatrix vec = new SimpleMatrix(prediction_size, 1);
+		for (Tuple<Integer, Double> c : output_indices) {
+			vec.set(c.x, 0, c.y);
+		}
+		SimpleMatrix search_vec = projection_matrix.transpose().mult(vec);
+		return VectorUtils.normalize(search_vec.extractMatrix(window * size, window * size + object_size, 0, 1));
+	}
+	
+	public SimpleMatrix output_label_representation(int output_index) {
+		SimpleMatrix vec = new SimpleMatrix(prediction_size, 1);
+		vec.set(output_index, 0, 1.0);
+		SimpleMatrix search_vec = projection_matrix.transpose().mult(vec);
+		return VectorUtils.normalize(search_vec.extractMatrix(window * size, window * size + object_size, 0, 1));
+	}
+	
+	public ArrayList<Triple<Double, String, Integer>> search_object_using_output_labels(int[] output_index, Integer topn) {
+		return most_similar_object(output_label_representation(output_index), topn);
+	}
+	public ArrayList<Triple<Double, String, Integer>> search_object_using_output_labels(List<Tuple<Integer, Double>> output_index, Integer topn) {
+		return most_similar_object(output_label_representation(output_index), topn);
+	}
+	public ArrayList<Triple<Double, String, Integer>> search_object_using_output_labels(int output_index, Integer topn) {
+		return most_similar_object(output_label_representation(output_index), topn);
+	}
+	
 	/*
 	 * Report the number of total numbers learnt in each matrix for the model.
 	 */
@@ -480,6 +517,23 @@ public class ObjectLM implements Serializable {
 			System.out.println(result.y + " : " + result.x);
 		}
 		
+		System.out.println("\n\n");
+		
+		// Search for Objects:
+		System.out.println("Objects near the output label 5, or $$$$:");
+		System.out.println("==========");
+		for (Triple<Double, String, Integer> result : model.search_object_using_output_labels(4, 10)) {
+			System.out.println(result.y + " : " + result.x);
+		}
+		
+		System.out.println("\n\n");
+		
+		// Search for Objects:
+		System.out.println("Objects near the output label 10, or *****:");
+		System.out.println("==========");
+		for (Triple<Double, String, Integer> result : model.search_object_using_output_labels(9, 10)) {
+			System.out.println(result.y + " : " + result.x);
+		}
 	}
 	
 }
