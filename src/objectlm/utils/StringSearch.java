@@ -104,7 +104,7 @@ public class StringSearch {
 		present_restaurant(document, null, null);
 	}
 	
-	public static void present_restaurant(DBObject document, double score) {
+	public static void present_restaurant(DBObject document, Double score) {
 		present_restaurant(document, score, null);
 	}
 	
