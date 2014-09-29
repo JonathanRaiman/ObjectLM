@@ -105,3 +105,8 @@ If you backprop the label through the projection matrix you can get a representa
 		for (Triple<Double, String, Integer> result : model.search_object_using_output_labels(9, 10)) {
 			System.out.println(result.y + " : " + result.x);
 		}
+
+
+### Dependencies
+
+Don't forget a [converter for importing saved models](https://github.com/JonathanRaiman/numpy_to_ejml).
