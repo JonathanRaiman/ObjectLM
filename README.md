@@ -109,4 +109,7 @@ If you backprop the label through the projection matrix you can get a representa
 
 ### Dependencies
 
-Don't forget a [converter for importing saved models](https://github.com/JonathanRaiman/numpy_to_ejml).
+Don't forget:
+
+1. A [converter for importing saved models](https://github.com/JonathanRaiman/numpy_to_ejml),
+2. [Apache Commons](http://commons.apache.org/proper/commons-lang/) for some string manipulation goodness.
