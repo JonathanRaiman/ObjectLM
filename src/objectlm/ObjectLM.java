@@ -13,6 +13,11 @@ import objectlm.utils.Tuple;
 
 import org.ejml.simple.SimpleMatrix;
 
+import com.apporiented.algorithm.clustering.AverageLinkageStrategy;
+import com.apporiented.algorithm.clustering.Cluster;
+import com.apporiented.algorithm.clustering.ClusteringAlgorithm;
+import com.apporiented.algorithm.clustering.PDistClusteringAlgorithm;
+
 import java.util.List;
 
 public class ObjectLM implements Serializable {
@@ -453,7 +458,7 @@ public class ObjectLM implements Serializable {
 	public static void main( String[] args) throws Exception {
 		// Load the 4th epoch of the model with window size 10
 		// language model size 20, and object language model size 20:
-		String base_path = "/Users/jonathanraiman/Documents/Master/research/deep_learning/restaurant_rsm/saves/objectlm_window_10_lm_20_objlm_20_4/";
+		String base_path = "/Users/jonathanraiman/Documents/Master/research/deep_learning/objectlm/saves/objectlm_window_10_lm_20_objlm_20_4/";
 		ObjectLM model = load_saved_python_model(base_path);
 		
 		
@@ -493,6 +498,8 @@ public class ObjectLM implements Serializable {
 				System.out.println(model.output_sigmoid_labels.get(i));
 			}
 		}
+		
+		System.out.println("\n\n");
 		
 		System.out.println("Search");
 		System.out.println("======");
@@ -534,6 +541,33 @@ public class ObjectLM implements Serializable {
 		for (Triple<Double, String, Integer> result : model.search_object_using_output_labels(9, 10)) {
 			System.out.println(result.y + " : " + result.x);
 		}
+		
+		
+		
+		long startTime = System.nanoTime();
+		double [] pdists = VectorUtils.compute_pdist(model.norm_object_matrix);
+		long endTime = System.nanoTime();
+
+		long duration = (endTime - startTime);
+		System.out.println("pdist calculation time : " + (duration / 1000000) + " ms");
+		
+		
+		// extract the names:
+		String[] names = model.index2object.toArray(new String[model.index2object.size()]);
+		System.out.println("Done with names array");
+		startTime = System.nanoTime();
+		double[][] linkage_matrix = HierarchicalCluster.cluster(pdists, model.norm_object_matrix.numRows());
+		endTime = System.nanoTime();
+		duration = (endTime - startTime);
+		System.out.println("clustering time : " + (duration / 1000000) + " ms");
+		
+		for (int i = 0;i < 5; i++) {
+			for (int j = 3; j > -1; --j) {
+				System.out.println(linkage_matrix[i][j]);
+			}
+			System.out.println("-----");
+		}
+		
 	}
 	
 }

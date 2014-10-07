@@ -25,6 +25,70 @@ public class VectorUtils {
 		return result;
 	}
 	
+	public static int[] argsort(final float[] a) {
+        return argsort(a, true);
+    }
+
+    public static int[] argsort(final float[] a, final boolean ascending) {
+        Integer[] indexes = new Integer[a.length];
+        for (int i = 0; i < indexes.length; i++) {
+            indexes[i] = i;
+        }
+        Arrays.sort(indexes, new Comparator<Integer>() {
+            @Override
+            public int compare(final Integer i1, final Integer i2) {
+                return (ascending ? 1 : -1) * Float.compare(a[i1], a[i2]);
+            }
+        });
+        return asArray(indexes);
+    }
+    
+
+	public static int[] argsort(final double[] a) {
+        return argsort(a, true);
+    }
+    
+    public static int[] argsort(final double[] a, final boolean ascending) {
+        Integer[] indexes = new Integer[a.length];
+        for (int i = 0; i < indexes.length; i++) {
+            indexes[i] = i;
+        }
+        Arrays.sort(indexes, new Comparator<Integer>() {
+            @Override
+            public int compare(final Integer i1, final Integer i2) {
+                return (ascending ? 1 : -1) * Double.compare(a[i1], a[i2]);
+            }
+        });
+        return asArray(indexes);
+    }
+
+    public static <T extends Number> int[] asArray(final T... a) {
+        int[] b = new int[a.length];
+        for (int i = 0; i < b.length; i++) {
+            b[i] = a[i].intValue();
+        }
+        return b;
+    }
+	
+	
+	public static double[] compute_pdist(SimpleMatrix x) {
+		
+		// final size is the sum of first n-1 first numbers:
+		int n = x.numRows();
+		int end_size = ((n-1) * n) / 2;
+		double[] pdists = new double[end_size];
+		
+		int index = 0;
+		for (int i = 1; i < n; ++i) {
+			for (int j = i + 1; j < n; ++j) {
+				pdists[index] = Math.abs(x.extractVector(true, i).dot(x.extractVector(true, j)));
+				index += 1;
+			}
+		}
+		
+		return pdists;
+	}
+	
 	public static SimpleMatrix normalize(SimpleMatrix x) {
 		return x.divide(x.normF());
 	}
@@ -126,20 +190,6 @@ public class VectorUtils {
 		}
 		return greatest;
 	}
-	
-	public static Integer[] argsort(final float[] a, final boolean ascending) {
-		Integer[] indexes = new Integer[a.length];
-        for (int i = 0; i < indexes.length; i++) {
-            indexes[i] = i;
-        }
-        Arrays.sort(indexes, new Comparator<Integer>() {
-            @Override
-            public int compare(final Integer i1, final Integer i2) {
-                return (ascending ? 1 : -1) * Float.compare(a[i1], a[i2]);
-            }
-        });
-        return indexes;
-    }
 	
 	public static ArrayList<Integer> argsort(final SimpleMatrix a, final boolean ascending) {
 		ArrayList<Integer> indexes = new ArrayList<Integer>();
