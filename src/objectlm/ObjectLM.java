@@ -1,5 +1,8 @@
 package objectlm;
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -13,12 +16,9 @@ import objectlm.utils.Tuple;
 
 import org.ejml.simple.SimpleMatrix;
 
-import com.apporiented.algorithm.clustering.AverageLinkageStrategy;
-import com.apporiented.algorithm.clustering.Cluster;
-import com.apporiented.algorithm.clustering.ClusteringAlgorithm;
-import com.apporiented.algorithm.clustering.PDistClusteringAlgorithm;
-
 import java.util.List;
+
+import org.codehaus.jettison.json.JSONObject;
 
 public class ObjectLM implements Serializable {
 	/* This class handles the model parameters
@@ -542,31 +542,31 @@ public class ObjectLM implements Serializable {
 			System.out.println(result.y + " : " + result.x);
 		}
 		
-		
-		
 		long startTime = System.nanoTime();
-		double [] pdists = VectorUtils.compute_pdist(model.norm_object_matrix);
+		double[] pdists = VectorUtils.compute_pdist(model.norm_object_matrix);
+		double[][] Z = HierarchicalCluster.average_link(pdists, model.norm_object_matrix.numRows());
 		long endTime = System.nanoTime();
 
 		long duration = (endTime - startTime);
-		System.out.println("pdist calculation time : " + (duration / 1000000) + " ms");
+		System.out.println("cluster calculation time : " + (duration / 1000000) + " ms");
 		
-		
-		// extract the names:
-		String[] names = model.index2object.toArray(new String[model.index2object.size()]);
-		System.out.println("Done with names array");
-		startTime = System.nanoTime();
-		double[][] linkage_matrix = HierarchicalCluster.cluster(pdists, model.norm_object_matrix.numRows());
+		/*startTime = System.nanoTime();
+		JSONObject output = new JSONObject(root);
 		endTime = System.nanoTime();
 		duration = (endTime - startTime);
-		System.out.println("clustering time : " + (duration / 1000000) + " ms");
+		System.out.println("json building time : " + (duration / 1000000) + " ms");
 		
-		for (int i = 0;i < 5; i++) {
-			for (int j = 3; j > -1; --j) {
-				System.out.println(linkage_matrix[i][j]);
-			}
-			System.out.println("-----");
-		}
+		startTime = System.nanoTime();
+		output = HierarchicalCluster.hierarchy_map(model.norm_object_matrix);
+		endTime = System.nanoTime();
+		duration = (endTime - startTime);
+		System.out.println("direct json building time : " + (duration / 1000000) + " ms");
+		File f = new File("hierarchy.json");
+		output.write(new FileWriter(f));*/
+		
+		ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream("hierarchy_map.ser"));
+		out.writeObject(Z);
+		out.close();
 		
 	}
 	

@@ -74,15 +74,16 @@ public class VectorUtils {
 	public static double[] compute_pdist(SimpleMatrix x) {
 		
 		// final size is the sum of first n-1 first numbers:
-		int n = x.numRows();
-		int end_size = ((n-1) * n) / 2;
-		double[] pdists = new double[end_size];
+		long n = x.numRows();
+		long end_size = ((n-1) * n) / 2;
+		double[] pdists = new double[(int)end_size];
 		
-		int index = 0;
-		for (int i = 1; i < n; ++i) {
+		int k = 0;
+		for (int i = 0; i < n; ++i) {
 			for (int j = i + 1; j < n; ++j) {
-				pdists[index] = Math.abs(x.extractVector(true, i).dot(x.extractVector(true, j)));
-				index += 1;
+				// Cosine distance:
+				pdists[k] = 1.0 - Math.abs(x.extractVector(true, i).dot(x.extractVector(true, j)));
+				k += 1;
 			}
 		}
 		
