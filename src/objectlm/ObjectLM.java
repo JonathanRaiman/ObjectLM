@@ -267,8 +267,6 @@ public class ObjectLM implements Serializable {
 		return labels;	
 	}
 	
-	
-	
 	public ArrayList<Integer> predict(Integer[] indices, int object_index) {
 		return predict(new ArrayList<Integer>(Arrays.asList(indices)), object_index);	
 	}

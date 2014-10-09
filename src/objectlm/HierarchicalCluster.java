@@ -27,11 +27,12 @@ public class HierarchicalCluster {
 	private static final int AVERAGE_LINK = 1;
 	public final HierarchicalCluster left;
 	public final HierarchicalCluster right;
+	public HierarchicalCluster parent;
 	public final double dist;
 	public final int count;
 	public final int id;
 	
-	public HierarchicalCluster(int id, HierarchicalCluster left, HierarchicalCluster right, double dist, int count) throws Exception {
+	public HierarchicalCluster(int id, HierarchicalCluster left, HierarchicalCluster right, HierarchicalCluster parent, double dist, int count) throws Exception {
 		
 		if ((left == null && right != null) ||
 				(right == null && left != null)) {
@@ -40,16 +41,21 @@ public class HierarchicalCluster {
 		this.id = id;
 		this.dist = dist;
 		this.left = left;
+		this.parent = parent;
 		this.right = right;
-		this.count = left == null ? count : left.count + right.count; 
+		this.count = left == null ? count : left.count + right.count;
+		if (left != null) {
+			left.parent = this;
+			right.parent = this;
+		}
 	}
 	
 	public HierarchicalCluster(int id, HierarchicalCluster left, HierarchicalCluster right, double dist) throws Exception {
-		this(id, left, right, dist, 1);
+		this(id, left, right, null, dist, 1);
 	}
 	
 	public HierarchicalCluster(int id) throws Exception {
-		this(id, null, null, 0.0, 1);
+		this(id, null, null, null, 0.0, 1);
 	}
 	
 
