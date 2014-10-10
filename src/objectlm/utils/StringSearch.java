@@ -1,5 +1,6 @@
 package objectlm.utils;
 
+import java.net.UnknownHostException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
@@ -124,7 +125,7 @@ public class StringSearch {
 		return keywords;
 	}
 	
-	public static DBObject text_search(String query, int search_method) throws Exception {
+	public static DBObject text_search(String query, int search_method) throws UnknownHostException {
 		DBObject best_object = null;
 		// Connect to Mongo:
 		final MongoClient DB_Client = new MongoClient( "localhost" , 27017 );
@@ -132,7 +133,7 @@ public class StringSearch {
 		final DBCollection documents = DB.getCollection( COLLECTION_NAME );
 		
 		if (search_method != JARO_WINKLER && search_method != LEVENSHTEIN) {
-			throw new Exception("This search method is not implemented");
+			search_method = JARO_WINKLER;
 		}
 		double new_score = Double.MAX_VALUE, score = Double.MAX_VALUE;
 		DBCursor cursor = documents.find();
