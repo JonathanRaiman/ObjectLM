@@ -31,8 +31,16 @@ public class HierarchicalCluster {
 	public final double dist;
 	public final int count;
 	public final int id;
+	public final String label;
+	public HierarchicalCluster[] _leaves;
 	
-	public HierarchicalCluster(int id, HierarchicalCluster left, HierarchicalCluster right, HierarchicalCluster parent, double dist, int count) throws Exception {
+	public HierarchicalCluster(int id,
+			HierarchicalCluster left,
+			HierarchicalCluster right,
+			HierarchicalCluster parent,
+			double dist,
+			int count,
+			String label) throws Exception {
 		
 		if ((left == null && right != null) ||
 				(right == null && left != null)) {
@@ -41,6 +49,7 @@ public class HierarchicalCluster {
 		this.id = id;
 		this.dist = dist;
 		this.left = left;
+		this.label = label;
 		this.parent = parent;
 		this.right = right;
 		this.count = left == null ? count : left.count + right.count;
@@ -51,14 +60,17 @@ public class HierarchicalCluster {
 	}
 	
 	public HierarchicalCluster(int id, HierarchicalCluster left, HierarchicalCluster right, double dist) throws Exception {
-		this(id, left, right, null, dist, 1);
+		this(id, left, right, null, dist, 1, null);
 	}
 	
 	public HierarchicalCluster(int id) throws Exception {
-		this(id, null, null, null, 0.0, 1);
+		this(id, null, null, null, 0.0, 1, null);
 	}
 	
-
+	public HierarchicalCluster(int id, String label) throws Exception {
+		this(id, null, null, null, 0.0, 1, label);
+	}
+	
 	public static Map<String, Object> hierarchical_cluster_map(int id) {
 		Map<String, Object> map = new HashMap<String, Object>();
 		map.put("id", id);
@@ -122,6 +134,11 @@ public class HierarchicalCluster {
 		return map;
 	}
 	
+	
+	public static HierarchicalCluster to_tree(double[][] Z) throws Exception {
+		return to_tree(Z, null);
+	}
+	
 	/**
 	 * Converts a hierarchical clustering encoded in the matrix ``Z`` (by
 	 * linkage) into an easy-to-use tree object.
@@ -139,18 +156,24 @@ public class HierarchicalCluster {
 	 * library.
 	 * 
 	 * @param Z double[][] The linkage matrix in proper form.
+	 * @param names List<String> the names for each cluster
 	 * @return {@link HierarchicalCluster}HierarchicalCluster root node
 	 * @throws Exception
 	 */
-	public static HierarchicalCluster to_tree(double[][] Z) throws Exception {
+	public static HierarchicalCluster to_tree(double[][] Z, List<String> names) throws Exception {
 		int n = Z.length + 1, i;
 		// Create a list full of None's to store the node objects
 		HierarchicalCluster[] d = new HierarchicalCluster[n*2 - 1];
 		HierarchicalCluster nd = null;
 		// Create the nodes corresponding to the n original objects.
-		for (i = 0; i < n; ++i) {
-			d[i] = new HierarchicalCluster(i);
-			
+		if (names == null) {
+			for (i = 0; i < n; ++i) {
+				d[i] = new HierarchicalCluster(i);
+			}
+		} else {
+			for (i = 0; i < n; ++i) {
+				d[i] = new HierarchicalCluster(i, names.get(i));
+			}
 		}
 		int fi, fj;
 		for (i = 0; i < n -1;++i) {
@@ -169,6 +192,8 @@ public class HierarchicalCluster {
 			}
 			d[n + i] = nd;
 		}
+		// nd is now the root
+		nd._leaves = d;
 		return nd;
 	}
 	
