@@ -24,7 +24,8 @@ public class Tuple<X, Y> {
         if (!(other instanceof Tuple)){
             return false;
         }
-        Tuple<X,Y> other_ = (Tuple<X,Y>) other;
+        @SuppressWarnings("unchecked")
+		Tuple<X,Y> other_ = (Tuple<X,Y>) other;
         return other_.x == this.x && other_.y == this.y;
     }
 

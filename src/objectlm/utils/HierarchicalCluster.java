@@ -1,5 +1,11 @@
-package objectlm;
+package objectlm.utils;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -9,6 +15,9 @@ import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 import org.ejml.simple.SimpleMatrix;
+
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 
 /**
  * A tree node class for representing a cluster.
@@ -186,7 +195,7 @@ public class HierarchicalCluster {
 				throw new Exception("Corrupt matrix Z. Index to derivative cluster is used before it is formed. See row  "+ fj + ", column 1");
 			}
 			nd = new HierarchicalCluster(i + n, d[fi], d[fj], Z[i][2]);
-			//                        ^ id  ^ left ^ right ^ dist
+			//                           ^ id  ^ left ^ right ^ dist
 			if (Z[i][3] != nd.count) {
 				throw new Exception("Corrupt matrix Z. The count Z["+i+"][3] is incorrect");
 			}
@@ -267,19 +276,6 @@ public class HierarchicalCluster {
 			d.add(nd);
 		}
 		return nd;
-	}
-
-	/**
-	 * Calculate the condensed index of element (i, j) in an n x n condensed
-	 * matrix.
-	 */
-	private static int condensed_index (int n, int i, int j) {
-		if (i < j) {
-			return n * i - (i * (i + 1) / 2) + (j - i - 1);
-		} else if (i > j) {
-			return n * j - (j * (j + 1) / 2) + (i - j - 1);
-		}
-		return 0;
 	}
 	
 	
@@ -386,7 +382,7 @@ public class HierarchicalCluster {
 			Lambda[i] = Double.MAX_VALUE;
 
 			for (int j = 0; j < i; ++j) {
-				M[j] = pdists[condensed_index(n, i, j)];
+				M[j] = pdists[VectorUtils.condensed_index(n, i, j)];
 			}
 			for (int j = 0; j < i; ++j) {
 				if (Lambda[j] >= M[j]) {
@@ -428,7 +424,7 @@ public class HierarchicalCluster {
 		    	if (id_map[i] == -1) {
 		    		continue;
 		    	}
-		    	i_start = condensed_index(n, i, i + 1);
+		    	i_start = VectorUtils.condensed_index(n, i, i + 1);
 		    	for (j = 0; j <n - i - 1;++j) {
 		            if (D[i_start + j] < current_min) {
 		                current_min = D[i_start + j];
@@ -462,12 +458,12 @@ public class HierarchicalCluster {
 		        }
 	
 		        ni = (id_i < n) ? 1 : (int)Z[id_i - n][3];
-		        D[condensed_index(n, i, y)] = average_cluster_dist(
-		            D[condensed_index(n, i, x)],
-		            D[condensed_index(n, i, y)],
+		        D[VectorUtils.condensed_index(n, i, y)] = average_cluster_dist(
+		            D[VectorUtils.condensed_index(n, i, x)],
+		            D[VectorUtils.condensed_index(n, i, y)],
 		            current_min, nx, ny, ni);
 		        if (i < x) {
-		            D[condensed_index(n, i, x)] = Double.MAX_VALUE;
+		            D[VectorUtils.condensed_index(n, i, x)] = Double.MAX_VALUE;
 		        }
 		    }
 		}
@@ -543,6 +539,36 @@ public class HierarchicalCluster {
 				break;
 		}
 		return to_map_tree(Z);
+	}
+	
+	/**
+	 * Loads a saved serialized tree matrix array from a path.
+	 * 
+	 * @param path where the serialized object is kept.
+	 * @return the matrix array.
+	 * @throws IOException
+	 * @throws ClassNotFoundException
+	 */
+	public static double[][] load_tree_matrix(String path) throws IOException, ClassNotFoundException {
+		FileInputStream hierarchical_map_file = new FileInputStream(path);
+		@SuppressWarnings("resource")
+		ObjectInputStream reader = new ObjectInputStream(hierarchical_map_file);
+		double[][] Z = (double[][]) reader.readObject();
+		return Z;
+	}
+	
+	/**
+	 * Saves the tree matrix to a file.
+	 *  
+	 * @param Z the tree matrix obtained using average_link or slink
+	 * @param path where to serialize the array.
+	 * @throws FileNotFoundException
+	 * @throws IOException
+	 */
+	public static void save_tree_matrix(double[][] Z, String path) throws FileNotFoundException, IOException {
+		ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream("hierarchy_map.ser"));
+		out.writeObject(Z);
+		out.close();
 	}
 	
 	/**

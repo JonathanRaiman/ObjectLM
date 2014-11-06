@@ -26,7 +26,8 @@ public class Triple<X, Y, Z> {
         if (!(other instanceof Triple)){
             return false;
         }
-        Triple<X,Y,Z> other_ = (Triple<X,Y,Z>) other;
+        @SuppressWarnings("unchecked")
+		Triple<X,Y,Z> other_ = (Triple<X,Y,Z>) other;
         return other_.x == this.x && other_.y == this.y && other_.z == this.z;
     }
 

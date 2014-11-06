@@ -1,24 +1,21 @@
 package objectlm;
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.FileWriter;
-import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Map;
 
 import numpy_to_ejml.MatrixImporter;
+import objectlm.utils.HierarchicalCluster;
 import objectlm.utils.Triple;
 //import objectlm.utils.Tuple;
 
 import objectlm.utils.Tuple;
+import objectlm.utils.VectorUtils;
 
 import org.ejml.simple.SimpleMatrix;
 
 import java.util.List;
-
-import org.codehaus.jettison.json.JSONObject;
 
 public class ObjectLM implements Serializable {
 	/* This class handles the model parameters
@@ -453,6 +450,10 @@ public class ObjectLM implements Serializable {
 		return most_similar_using_matrix_vector(norm_object_matrix, x, index2object, topn);
 	}
 	
+	public int number_of_objects () {
+		return this.norm_object_matrix.numRows();
+	}
+	
 	public static void main( String[] args) throws Exception {
 		// Load the 4th epoch of the model with window size 10
 		// language model size 20, and object language model size 20:
@@ -542,7 +543,7 @@ public class ObjectLM implements Serializable {
 		
 		long startTime = System.nanoTime();
 		double[] pdists = VectorUtils.compute_pdist(model.norm_object_matrix);
-		double[][] Z = HierarchicalCluster.average_link(pdists, model.norm_object_matrix.numRows());
+		double[][] Z = HierarchicalCluster.average_link(pdists, model.number_of_objects());
 		long endTime = System.nanoTime();
 
 		long duration = (endTime - startTime);
@@ -562,9 +563,7 @@ public class ObjectLM implements Serializable {
 		File f = new File("hierarchy.json");
 		output.write(new FileWriter(f));*/
 		
-		ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream("hierarchy_map.ser"));
-		out.writeObject(Z);
-		out.close();
+		HierarchicalCluster.save_tree_matrix(Z, "hierarchy_map.ser");
 		
 	}
 	

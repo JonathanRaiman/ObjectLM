@@ -1,5 +1,6 @@
-package objectlm;
+package objectlm.utils;
 
+import java.util.List;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -23,6 +24,35 @@ public class VectorUtils {
 			index += vector.numRows();
 		}
 		return result;
+	}
+	
+	/**
+	 * Here we follow the steps shown in [1, 2] to get the inverse covariance. 
+	 * 
+	 * [1] ``The discovery of structural forms", Kemp C., Tenenbaum J. B., (2008)
+	 * [2] ``Semi-Supervised Learning Using Gaussian Fields and Harmonic Functions",
+	 *     Zhu, Ghahramani and Lafferty (2003)
+	 * 
+	 * @param pdists: succinct adjacency matrix.
+	 * @param n: number of points compared in adjacency matrix.
+	 * @param sigma : the sigma value used
+	 * @return SimpleMatrix : the inverse covariance matrix for all points.
+	 */
+	public static SimpleMatrix inv_covariance(double[] pdists, int n, double sigma) {
+		SimpleMatrix D = new SimpleMatrix(n, n);
+		double row_sum = 0.0,
+				pdist = 0.0,
+				sigma_squared_inv = 1.0 / (sigma * sigma);
+		for (int i = 0; i < n;++i) {
+			row_sum = 0.0;
+			for (int j = 0; j < n; ++j) {
+				pdist = pdists[condensed_index(n, i, j)];
+				D.set(i, j, - pdist);
+				row_sum += pdist;
+			}
+			D.set(i, i, D.get(i,i) + row_sum + sigma_squared_inv);
+		}
+		return D;
 	}
 	
 	public static int[] argsort(final float[] a) {
@@ -192,8 +222,8 @@ public class VectorUtils {
 		return greatest;
 	}
 	
-	public static ArrayList<Integer> argsort(final SimpleMatrix a, final boolean ascending) {
-		ArrayList<Integer> indexes = new ArrayList<Integer>();
+	public static List<Integer> argsort(final SimpleMatrix a, final boolean ascending) {
+		List<Integer> indexes = new ArrayList<Integer>();
         for (int i = 0; i < a.numRows(); i++) {
             indexes.add(i);
         }
@@ -271,6 +301,19 @@ public class VectorUtils {
 		}
 		
 		return x;
+	}
+	
+	/**
+	 * Calculate the condensed index of element (i, j) in an n x n condensed
+	 * matrix.
+	 */
+	public static int condensed_index (int n, int i, int j) {
+		if (i < j) {
+			return n * i - (i * (i + 1) / 2) + (j - i - 1);
+		} else if (i > j) {
+			return n * j - (j * (j + 1) / 2) + (i - j - 1);
+		}
+		return 0;
 	}
 	
 	public static void main (String[] args) throws Exception {

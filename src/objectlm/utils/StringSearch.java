@@ -1,6 +1,5 @@
 package objectlm.utils;
 
-import java.net.UnknownHostException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
@@ -125,7 +124,7 @@ public class StringSearch {
 		return keywords;
 	}
 	
-	public static DBObject text_search(String query, int search_method) throws UnknownHostException {
+	public static DBObject text_search(String query, int search_method) throws Exception {
 		DBObject best_object = null;
 		// Connect to Mongo:
 		final MongoClient DB_Client = new MongoClient( "localhost" , 27017 );
@@ -136,6 +135,7 @@ public class StringSearch {
 			search_method = JARO_WINKLER;
 		}
 		double new_score = Double.MAX_VALUE, score = Double.MAX_VALUE;
+		
 		DBCursor cursor = documents.find();
 		for (DBObject document : cursor) {
 			List<String> keywords = convert_restaurant_DBObject_to_list(document);
