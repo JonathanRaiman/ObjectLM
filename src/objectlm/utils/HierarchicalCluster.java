@@ -10,14 +10,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 import org.ejml.simple.SimpleMatrix;
-
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
 
 /**
  * A tree node class for representing a cluster.
@@ -40,6 +38,7 @@ public class HierarchicalCluster {
 	public final double dist;
 	public final int count;
 	public final int id;
+	public Integer code;
 	public final String label;
 	public HierarchicalCluster[] _leaves;
 	
@@ -149,6 +148,226 @@ public class HierarchicalCluster {
 	}
 	
 	/**
+	 * Monte Carlo estimate of covariance matrix using the Laplacian of the graph
+	 * Essentially takes random walks through graph based on the similarity (distance)
+	 * between adjancent nodes. If two nodes are very similar then leaking (ability to travel)
+	 * is high, else low. If it is easy to travel between A and B then the underlying cause
+	 * for their existence is correlated in this space for our purposes and thus we can infer
+	 * some correlation from this belief.
+	 *  
+	 * Sigma controls the mobility of the simulation (and thus affects the number of steps and
+	 * trials needed for good estimates). This is a pretty tragic flaw that plagues
+	 * the hyperparameters here.
+	 * 
+	 * @param Z the tree matrix encoding the structure
+	 * @param trials how many simulation runs to average (1000s are okay)
+	 * @param steps how many steps to take (if steps => inf then covariance will become flat)
+	 * @param sigma mobility term. High sigma means that number of steps actually taken is low
+	 * E[steps taken] = (1-sigma) * steps
+	 * 
+	 * @return approximate covariance matrix. 
+	 * @throws Exception 
+	 */
+	public static double[][] appproximate_covariance_matrix(final double[][] Z, int trials, int steps, Double sigma, Boolean leaves) throws Exception {
+		int node, step, direction, num_nodes, next_node, num_leaves, trial_nodes;
+		Random rand = new Random();
+		// 1. Construct adjacency matrix and degree matrix
+		
+		HierarchicalCluster Tree = to_tree(Z, null);
+		num_nodes = Tree._leaves.length;
+		num_leaves = Z.length+1;
+		trial_nodes = num_nodes;
+		
+		// 2. Run multiple random walks (trials)
+		
+		Double variance = sigma != null ? Math.pow(sigma, 2) : null;
+		
+		double[][] covariance_matrix;
+		
+		if (leaves != null && leaves == true) {
+			covariance_matrix = new double[num_leaves][num_leaves];
+			trial_nodes = num_leaves;
+		} else {
+			covariance_matrix = new double[num_nodes][num_nodes];
+		}
+		int current_position = 0;
+		
+		double dx = 1. /( (double) trials);
+		
+		for (node = 0; node < trial_nodes; node++) {
+			current_position = node;
+			for (step = 0; step < steps;++step) {
+				if (variance != null && Math.random() < variance) {
+					continue;
+				} else {
+					// choose random direction:
+					direction = rand.nextInt( Tree._leaves[current_position].number_of_edges());
+					// find the id of the target node
+					next_node = Tree._leaves[current_position].move_using_vertex(direction).id;
+					// find distance (probability of landing there) for this next node
+					// and go there if dice says so.
+					if (Math.random() < Tree._leaves[current_position].move_using_vertex_distance(direction)) {
+						current_position = next_node;
+					}
+				}
+			}
+			if (node < trial_nodes) {
+				// update the observations:
+				covariance_matrix[node][current_position] += dx;
+				covariance_matrix[current_position][node] += dx;
+			}
+		}
+		
+		return covariance_matrix;
+	}
+	
+	/**
+	 * Monte Carlo estimate of covariance matrix using the Laplacian of the graph
+	 * Essentially takes random walks through graph based on the similarity (distance)
+	 * between adjancent nodes. If two nodes are very similar then leaking (ability to travel)
+	 * is high, else low. If it is easy to travel between A and B then the underlying cause
+	 * for their existence is correlated in this space for our purposes and thus we can infer
+	 * some correlation from this belief.
+	 *  
+	 * Sigma controls the mobility of the simulation (and thus affects the number of steps and
+	 * trials needed for good estimates). This is a pretty tragic flaw that plagues
+	 * the hyperparameters here.
+	 * 
+	 * @param Z the tree matrix encoding the structure
+	 * @param trials how many simulation runs to average (1000s are okay)
+	 * @param steps how many steps to take (if steps => inf then covariance will become flat)
+	 * @param sigma mobility term. High sigma means that number of steps actually taken is low
+	 * E[steps taken] = (1-sigma) * steps
+	 * 
+	 * @return approximate covariance matrix in table form due to sparsity of observations. 
+	 * @throws Exception 
+	 */
+	public static SymmetricMultiKeyMapNumeric<Integer> appproximate_covariance_matrix_table(final double[][] Z, int trials, int steps, Double sigma, Boolean leaves) throws Exception {
+		int node, step, direction, num_nodes, next_node, num_leaves, trial_nodes;
+		Random rand = new Random();
+		// 1. Construct adjacency matrix and degree matrix
+		
+		HierarchicalCluster Tree = to_tree(Z, null);
+		num_nodes = Tree._leaves.length;
+		num_leaves = Z.length+1;
+		trial_nodes = num_nodes;
+		
+		// 2. Run multiple random walks (trials)
+		
+		Double variance = sigma != null ? Math.pow(sigma, 2) : null;
+		
+		SymmetricMultiKeyMapNumeric<Integer> covariance_matrix = new SymmetricMultiKeyMapNumeric<Integer>();
+		
+		if (leaves != null && leaves == true) {
+			trial_nodes = num_leaves;
+		}
+		int current_position = 0;
+		
+		double dx = 1. /( (double) trials);
+		
+		for (node = 0; node < trial_nodes; node++) {
+			current_position = node;
+			for (step = 0; step < steps;++step) {
+				if (variance != null && Math.random() < variance) {
+					continue;
+				} else {
+					// choose random direction:
+					direction = rand.nextInt( Tree._leaves[current_position].number_of_edges());
+					// find the id of the target node
+					next_node = Tree._leaves[current_position].move_using_vertex(direction).id;
+					// find distance (probability of landing there) for this next node
+					// and go there if dice says so.
+					if (Math.random() < Tree._leaves[current_position].move_using_vertex_distance(direction)) {
+						current_position = next_node;
+					}
+				}
+			}
+			if (node < trial_nodes) {
+				// update the observations:
+				covariance_matrix.increment_equals(node, current_position, dx);
+			}
+		}
+		
+		return covariance_matrix;
+	}
+	
+	/**
+	 * Based on whether the vertex has a parent
+	 * we implement a switchboard to know what 
+	 * a direction decision points to in the move
+	 * space.
+	 * 
+	 * @param direction: what direction to go in (0, 1, 2)
+	 * @return HierarchicalCluster: the resulting vertex
+	 * 		   from the move
+	 */
+	private HierarchicalCluster move_using_vertex(int direction) {
+		if (this.parent != null) {
+			switch (direction) {
+				case 0:
+					return this.parent;
+				case 1:
+					return this.left;
+				case 2:
+					return this.right;
+				default:
+					return null;
+			}
+		} else {
+			switch (direction) {
+				case 0:
+					return this.left;
+				case 1:
+					return this.right;
+				default:
+					return null;
+			}
+		}
+	}
+	
+	/**
+	 * Based on whether the vertex has a parent
+	 * we implement a switchboard to know what 
+	 * a direction decision points to in the move
+	 * space and get the distance for that move.
+	 * 
+	 * @param direction: what direction to go in (0, 1, 2)
+	 * @return HierarchicalCluster: the resulting vertex
+	 * 		   from the move
+	 */
+	private double move_using_vertex_distance(int direction) {
+		if (this.parent != null && direction == 0) {
+			return this.parent.dist;
+		}
+		// can only move down, which means self
+		// distance is the metric for the lower cluster
+		// up to this one (and we assume symmetry).
+		return this.dist;
+	}
+	
+	/**
+	 * Get the number of edges leaves this
+	 * node on the graph.
+	 * 
+	 * @return int: the number of edges leaving this
+	 * 			    vertex. 
+	 */
+	private int number_of_edges() {
+		if (this.parent != null) {
+			if (this.left != null) {
+				return 3;
+			} else {
+				return 1;
+			}
+		} else {
+			// there are no parentless
+			// leafless vertices (binary tree
+			// assumption with node number > 1)
+			return 2;
+		}
+	}
+
+	/**
 	 * Converts a hierarchical clustering encoded in the matrix ``Z`` (by
 	 * linkage) into an easy-to-use tree object.
 	 * 
@@ -201,9 +420,31 @@ public class HierarchicalCluster {
 			}
 			d[n + i] = nd;
 		}
+		assign_binary_codes(nd);
+		
 		// nd is now the root
 		nd._leaves = d;
 		return nd;
+	}
+	
+	static void assign_binary_codes(HierarchicalCluster node, int code) {
+		node.code = code;
+		if (node.left != null) {
+			assign_binary_codes(node.left, code * 2);
+		}
+		if (node.right != null) {
+			assign_binary_codes(node.right, code * 2 + 1);
+		}
+	}
+	
+	static void assign_binary_codes(HierarchicalCluster node) {
+		node.code = null;
+		if (node.left != null) {
+			assign_binary_codes(node.left, 0);
+		}
+		if (node.right != null) {
+			assign_binary_codes(node.right, 1);
+		}
 	}
 	
 
