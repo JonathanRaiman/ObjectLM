@@ -53,6 +53,14 @@ public class MultiKeyMap<K,F,V> extends HashMap<Integer, V> {
     	return super.get(hash(key1, key2));
     }
     
+    public V get_with_default(K key1, F key2, V default_value) {
+    	V returned = this.get(key1, key2);
+    	if (returned != null) {
+    		return returned;
+    	}
+    	return default_value;
+    }
+    
     /**
      * Extends Map to have the ability to use a multi key
      * to remove elements.
