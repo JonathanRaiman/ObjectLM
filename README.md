@@ -1,9 +1,9 @@
-Yelp Language Model
-===================
+Object Language Model
+=====================
 
-This is a Java implementation of the Python / Cython version found [here](https://github.com/JonathanRaiman/pythonobjectlm).
+This is a Java implementation of Object Language Model of the Python / Cython version found [here](https://github.com/JonathanRaiman/pythonobjectlm).
 
-A language model for documents and words. This simple language model takes a supervised input dataset with pairs of labels in multinomial or unimodal classes, and then trains the documents and windows of words within those documents to predict those labels. Both documents and words are trained through backprop. Words are shared among all documents, while document vectors live in their own embedding.
+A language model for documents ("objects") and words. This simple language model takes a supervised input dataset with pairs of labels in multiclass or binary, and then trains the documents and windows of words within those documents to predict those labels. Both documents and words are trained through backprop. Words are shared among all documents, while document vectors live in their own embedding.
 
 Eucledian distances between documents are observed to possess fuzzy search properties over all the labels.
 
